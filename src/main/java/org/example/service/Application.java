@@ -25,7 +25,6 @@ import org.wso2.msf4j.MicroservicesRunner;
  */
 public class Application {
     public static void main(String[] args) {
-    	System.out.println("testing");
         new MicroservicesRunner()
                 .deploy(new BarristaService())
                 .start();
