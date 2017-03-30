@@ -33,6 +33,9 @@ import java.net.*;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.xml.parsers.*;
+import org.xml.sax.InputSource;
+import org.w3c.dom.*;
 
 
 /**
@@ -44,7 +47,6 @@ import javax.net.ssl.SSLPeerUnverifiedException;
  */
 @Path("/service")
 public class BarristaService {
-
 
 
     //TODO: Replace Java Hashmaps by use of WSO2 Data Services for persistenc (need simple table structure support as below).   
@@ -68,6 +70,17 @@ public class BarristaService {
 	return rand.nextInt(1000);
     }
 
+
+public static String getCharacterDataFromElement(Element e) {
+    Node child = e.getFirstChild();
+    if (child instanceof CharacterData) {
+       CharacterData cd = (CharacterData) child;
+       return cd.getData();
+    }
+    return "?";
+  }
+
+
     @GET
     @Path("/{name}")
     public String hello(@PathParam("name") String name) {
@@ -85,6 +98,10 @@ public class BarristaService {
 		//Coffee.put("BrewedCoffee", "1.00");
 		//Coffee.put("Tea","2.50");
 		//Coffee.put("MintDrink","4.00");
+		String str = null;
+
+		try {
+
 	        URL url = new URL ("http://10.200.0.144:9763/services/MyFirstDS/getCoffee");
 	       URLConnection urlc = url.openConnection();
 		urlc.setDoOutput(true);
@@ -97,8 +114,48 @@ public class BarristaService {
         while ((l=br.readLine())!=null) {
             System.out.println(l);
 	    System.out.println('\n');
+	str = str + l;
         }
+
         br.close();
+	} catch (Exception e){
+		e.printStackTrace();
+}
+
+try {
+	    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+	    DocumentBuilder db = dbf.newDocumentBuilder();
+	    InputSource is = new InputSource();
+	    is.setCharacterStream(new StringReader(str));
+
+	    Document doc = db.parse(is);
+	    NodeList nodes = doc.getElementsByTagName("Entry");
+
+	    // iterate the menu
+	    for (int i = 0; i < nodes.getLength(); i++) {
+		Element element = (Element) nodes.item(i);
+
+		NodeList name = element.getElementsByTagName("id");
+		Element line = (Element) name.item(0);
+		System.out.println("ID: " + getCharacterDataFromElement(line));
+
+		NodeList title = element.getElementsByTagName("drink");
+		line = (Element) title.item(0);
+		String s1 = getCharacterDataFromElement(line);
+		System.out.println("Drink: " + getCharacterDataFromElement(line));
+
+		NodeList price = element.getElementsByTagName("price");
+		line = (Element) price.item(0);
+		String s2 = getCharacterDataFromElement(line);
+		System.out.println("Price: " + getCharacterDataFromElement(line));
+		
+		Coffee.put(s1,s2);
+	    }
+	}
+	catch (Exception e) {
+	    e.printStackTrace();
+	}
+
 
 		System.out.println("Initialized Coffee Type Menu"); //debug
 		String s = "Initialized Coffee Type Menu:\nLatte\nMocha\nBrewedCoffee\nTea\nMintDrink";
